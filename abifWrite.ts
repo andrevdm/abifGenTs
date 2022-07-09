@@ -88,6 +88,49 @@ export function dataChar(name: string, tagNum: number, s: string) : AbifData{
     renderData: () => [utf.encode(s)]
   }
 }
+
+export function dataWord(name: string, tagNum: number, vs: number[]) : AbifData{
+  return {
+    dataOffset: 0,
+    name: name,
+    tagNumber: tagNum,
+    elementType: 3,
+    elementSize: 2,
+    elementCount: vs.length,
+    renderData: () => vs.map(v => io.mkUint16(v))
+  }
+}
+
+export function dataShort(name: string, tagNum: number, vs: number[]) : AbifData{
+  return {
+    dataOffset: 0,
+    name: name,
+    tagNumber: tagNum,
+    elementType: 4,
+    elementSize: 2,
+    elementCount: vs.length,
+    renderData: () => vs.map(v => io.mkInt16(v))
+  }
+}
+
+export function dataPString(name: string, tagNum: number, s: string) : AbifData{
+  const utf = new TextEncoder();
+  const u = utf.encode(s);
+
+  if(u.length > 255){
+    throw `String too large for a pString, max is 255, got ${u.length}: ${u}`
+  }
+
+  return {
+    dataOffset: 0,
+    name: name,
+    tagNumber: tagNum,
+    elementType: 18,
+    elementSize: 1,
+    elementCount: s.length + 1,
+    renderData: () => [io.mkUint8(u.length), u]
+  }
+}
 // ###############################################################################################################################
 
 
@@ -166,6 +209,7 @@ export async function writeAbif(abifPath: string, ds: AbifData[]) : Promise<void
 
   //fixup offset of directory
   await f.sync()
+  //offset 26 = offset in header where directory_entry.dataOffset is
   await f.write(io.mkInt32(dirStartOffset), null, null, 26)
   await f.close()
 }
