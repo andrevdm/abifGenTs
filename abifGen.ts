@@ -19,31 +19,31 @@ export async function generateAbif(name: string, path: string, weightedFasta: [n
 }
 
 
-function genBaseOrder(): aw.AbifData {
+export function genBaseOrder(): aw.AbifData {
   return aw.dataChar("FWO_", 1, "GATC")
 }
 
-function genLane(laneNum: number): aw.AbifData {
+export function genLane(laneNum: number): aw.AbifData {
   return aw.dataShort("LANE", 1, [laneNum])
 }
 
-function genMobilityFileName(tag: number, fileName: string): aw.AbifData {
+export function genMobilityFileName(tag: number, fileName: string): aw.AbifData {
   return aw.dataPString("PDMF", tag, fileName)
 }
 
-function genComment(comment: string): aw.AbifData {
+export function genComment(comment: string): aw.AbifData {
   return aw.dataPString("CMNT", 1, comment)
 }
 
-function genSampleName(name: string): aw.AbifData {
+export function genSampleName(name: string): aw.AbifData {
   return aw.dataPString("SMPL", 1, name)
 }
 
-function genDyeStrength(w: number, x: number, y: number, z: number): aw.AbifData {
+export function genDyeStrength(w: number, x: number, y: number, z: number): aw.AbifData {
   return aw.dataShort("S/N%", 1, [w, x, y, z])
 }
 
-type TraceData ={
+export type TraceData ={
   data09G: number[]
   data10A: number[]
   data11T: number[]
@@ -52,15 +52,17 @@ type TraceData ={
   fasta: string
 }
 
-function generateTraceData(weightedFasta: [number, string][]): TraceData{
+export function generateTraceData( weightedFasta: [number, string][],
+                                   // Values for a base that was present. This defines the shape of the chromatogram curve, and defines the number of values per base
+                                   curve = [0, 0, 128, 512, 1024, 1024, 512, 128, 0, 0]
+                                 ): TraceData{
+
   // Get [ [weight, expanded nucs] ]
   const ws:[number, string[]][] = weightedFasta.map( ([w, ns]) => {
     const nucs = [...ns.toUpperCase()].map(unIupac);
     return [w, nucs]
   });
 
-  // Values for a base that was present. This defines the shape of the chromatogram curve, and defines the number of values per base
-  const curve = [100] //TODO [0, 0, 128, 512, 1024, 1024, 512, 128, 0, 0]
 
   const longestRead = Math.max(...ws.map(([, ns]) => ns.length))
 
@@ -104,7 +106,7 @@ function generateTraceData(weightedFasta: [number, string][]): TraceData{
 
 
 // Convert a IUPAC ambiguity code to the set of nucleotides it represents
-function unIupac(s: string): string{
+export function unIupac(s: string): string{
   switch(s.slice(0, 1)){
     case 'T': return "T"
     case 'C': return "C"
@@ -131,7 +133,7 @@ function unIupac(s: string): string{
 }
 
 
-function iupac(s: string): string{
+export function iupac(s: string): string{
   const a = s.includes("A");
   const c = s.includes("C");
   const g = s.includes("G");
@@ -156,3 +158,4 @@ function iupac(s: string): string{
     default: return "_";
   }
 }
+
