@@ -1,4 +1,4 @@
 node_modules
 a.abif
 a.txt
-index.js
+*.js
