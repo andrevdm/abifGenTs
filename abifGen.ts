@@ -139,22 +139,22 @@ export function iupac(s: string): string{
   const g = s.includes("G");
   const t = s.includes("T");
 
-  switch( [a, c, g, t] ){
-    case [true,  false, false, false]: return "A"
-    case [false, true,  false, false]: return "C"
-    case [false, false, true,  false]: return "G"
-    case [false, false, false, true ]: return "T"
-    case [true,  true,  false, false]: return "M"
-    case [true,  false, true,  false]: return "R"
-    case [true,  false, false, true ]: return "W"
-    case [false, true,  true,  false]: return "S"
-    case [false, true,  false, true ]: return "Y"
-    case [false, false, true,  true ]: return "K"
-    case [true,  true,  true,  false]: return "V"
-    case [true,  true,  false, true ]: return "H"
-    case [true,  false, true,  true ]: return "D"
-    case [false, true,  true,  true ]: return "B"
-    case [true,  true,  true,  true ]: return "N"
+  switch( [a, c, g, t].toString() ){
+    case [true,  false, false, false].toString(): return "A"
+    case [false, true,  false, false].toString(): return "C"
+    case [false, false, true,  false].toString(): return "G"
+    case [false, false, false, true ].toString(): return "T"
+    case [true,  true,  false, false].toString(): return "M"
+    case [true,  false, true,  false].toString(): return "R"
+    case [true,  false, false, true ].toString(): return "W"
+    case [false, true,  true,  false].toString(): return "S"
+    case [false, true,  false, true ].toString(): return "Y"
+    case [false, false, true,  true ].toString(): return "K"
+    case [true,  true,  true,  false].toString(): return "V"
+    case [true,  true,  false, true ].toString(): return "H"
+    case [true,  false, true,  true ].toString(): return "D"
+    case [false, true,  true,  true ].toString(): return "B"
+    case [true,  true,  true,  true ].toString(): return "N"
     default: return "_";
   }
 }
