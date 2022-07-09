@@ -117,6 +117,19 @@ function dataByte(name: string, tagNum: number, vs: number[]) : AbifData{
     renderData: () => vs.map(mkUint8)
   }
 }
+
+function dataChar(name: string, tagNum: number, s: string) : AbifData{
+  const utf = new TextEncoder();
+  return {
+    dataOffset: 0,
+    name: name,
+    tagNumber: tagNum,
+    elementType: 2,
+    elementSize: 1,
+    elementCount: s.length,
+    renderData: () => [utf.encode(s)]
+  }
+}
 // ###############################################################################################################################
 
 
@@ -221,7 +234,8 @@ async function main(){
 
   const ds = [
     dataByte("dat1", 1, [1,2,3,4]),
-    dataByte("dat2", 1, [6,7,8]),
+    dataChar("dat2", 1, "ABc"),
+    dataChar("dat3", 1, "ABcdef!!"),
   ]
 
   await writeAbif(f, ds)
