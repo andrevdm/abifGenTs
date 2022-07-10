@@ -113,6 +113,18 @@ export function dataShort(name: string, tagNum: number, vs: number[]) : AbifData
   }
 }
 
+export function dataLong(name: string, tagNum: number, vs: number[]) : AbifData{
+  return {
+    dataOffset: 0,
+    name: name,
+    tagNumber: tagNum,
+    elementType: 5,
+    elementSize: 4,
+    elementCount: vs.length,
+    renderData: () => vs.map(v => io.mkInt32(v))
+  }
+}
+
 export function dataPString(name: string, tagNum: number, s: string) : AbifData{
   const utf = new TextEncoder();
   const u = utf.encode(s);

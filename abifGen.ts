@@ -1,11 +1,20 @@
 import * as aw from './abifWrite'
 
 export async function generateAbif(name: string, path: string, weightedFasta: [number, string][]){
-  const ds = [
-    aw.dataByte("dat1", 1, [1,2,3,4]),
-    aw.dataChar("dat2", 1, "ABc"),
-    aw.dataChar("dat3", 1, "ABcdef!!"),
+  const td = generateTraceData(weightedFasta)
+  const valsPerBase = td.valsPerBase
+  const generatedFastaLen = td.fasta.length
 
+  // The point that is the peak of the trace, i.e. mid point of trace for a single base
+  const midPeek = Math.floor(valsPerBase / 2)
+
+  // Mid-point for each nucleotide
+  const peakLocations = [];
+  for( let i = 0; i < generatedFastaLen; ++i ){
+    peakLocations.push(midPeek + (i * midPeek))
+  }
+
+  const ds = [
     genBaseOrder(),
     genLane(1),
     genMobilityFileName(1, "KB_3500_POP7_BDTv3.mob"),
@@ -13,6 +22,14 @@ export async function generateAbif(name: string, path: string, weightedFasta: [n
     genComment("TS ABIF generator"),
     genSampleName(name),
     genDyeStrength(53, 75, 79, 48),
+    genPeakLocations(1, peakLocations),
+    genPeakLocations(2, peakLocations),
+    genCalledBases(1, td.fasta),
+    genCalledBases(2, td.fasta),
+    genChromData(9, td.data09G),
+    genChromData(10, td.data10A),
+    genChromData(11, td.data11T),
+    genChromData(12, td.data12C),
   ]
 
   await aw.writeAbif(path, ds)
@@ -41,6 +58,18 @@ export function genSampleName(name: string): aw.AbifData {
 
 export function genDyeStrength(w: number, x: number, y: number, z: number): aw.AbifData {
   return aw.dataShort("S/N%", 1, [w, x, y, z])
+}
+
+export function genPeakLocations(tag: number, ps: number[]): aw.AbifData {
+  return aw.dataShort("PLOC", tag, ps)
+}
+
+export function genCalledBases(tag: number, bs: string): aw.AbifData {
+  return aw.dataChar("PBAS", tag, bs)
+}
+
+export function genChromData(tag: number, ds: number[]): aw.AbifData {
+  return aw.dataShort("DATA", tag, ds)
 }
 
 export type TraceData ={
@@ -139,6 +168,7 @@ export function iupac(s: string): string{
   const g = s.includes("G");
   const t = s.includes("T");
 
+  //TODO rather use ts-pattern
   switch( [a, c, g, t].toString() ){
     case [true,  false, false, false].toString(): return "A"
     case [false, true,  false, false].toString(): return "C"

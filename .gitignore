@@ -1,4 +1,5 @@
 node_modules
-a.abif
+*.abif
+*.abi
 a.txt
 *.js
