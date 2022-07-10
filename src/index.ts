@@ -1,5 +1,4 @@
 import ya from 'yargs/yargs';
-//import yh from 'yargs/helpers';
 
 import * as ag from './write/abifGen'
 
@@ -15,9 +14,14 @@ async function main(){
     })
     .argv;
 
+  const args = await argv;
 
-  console.log(argv)
-  //ag.generateAbif("a", "./a.abif", [[1, "ACGTACGTACGTACGT"]])
+  switch(args["_"][0]){
+    case "gen": return ag.runGen( args.source as string, args.dest as string );
+    default: throw `Uknown command ${args["_"][0]}`
+  }
 }
+
+
 
 main()
