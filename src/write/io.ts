@@ -36,3 +36,7 @@ export function mkInt32(i: number, littleEndian = false) : Uint8Array {
 export function mkStrOfLen(s: string, len: number){
   return s.padEnd(len, " ").slice(0, len)
 }
+
+export function asciiToUin8Array(s: string): Uint8Array{
+  return Uint8Array.from(Array.from(s).map(l => l.charCodeAt(0)));
+}

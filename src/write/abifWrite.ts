@@ -21,6 +21,7 @@ export type AbifData = {
   readonly elementCount : number;
   readonly renderData : IRenderData;
   dataOffset: number | Uint8Array;
+  rawData : Uint8Array;
 }
 // ###############################################################################################################################
 
@@ -42,6 +43,7 @@ export function concatArrays(as: Uint8Array[]) : Uint8Array {
 export function dataHeaderDir(numEntries: number) : AbifData{
   return {
     dataOffset: 0,
+    rawData: new Uint8Array(),
     name: "tdir",
     tagNumber: 1,
     elementType: 1023,
@@ -55,6 +57,7 @@ export function dataHeaderDir(numEntries: number) : AbifData{
 export function dataNull(name: string, tagNum: number) : AbifData{
   return {
     dataOffset: 0,
+    rawData: new Uint8Array(),
     name: name,
     tagNumber: tagNum,
     elementType: 1,
@@ -67,6 +70,7 @@ export function dataNull(name: string, tagNum: number) : AbifData{
 export function dataByte(name: string, tagNum: number, vs: number[]) : AbifData{
   return {
     dataOffset: 0,
+    rawData: new Uint8Array(),
     name: name,
     tagNumber: tagNum,
     elementType: 1,
@@ -80,6 +84,7 @@ export function dataChar(name: string, tagNum: number, s: string) : AbifData{
   const utf = new TextEncoder();
   return {
     dataOffset: 0,
+    rawData: new Uint8Array(),
     name: name,
     tagNumber: tagNum,
     elementType: 2,
@@ -92,6 +97,7 @@ export function dataChar(name: string, tagNum: number, s: string) : AbifData{
 export function dataWord(name: string, tagNum: number, vs: number[]) : AbifData{
   return {
     dataOffset: 0,
+    rawData: new Uint8Array(),
     name: name,
     tagNumber: tagNum,
     elementType: 3,
@@ -104,6 +110,7 @@ export function dataWord(name: string, tagNum: number, vs: number[]) : AbifData{
 export function dataShort(name: string, tagNum: number, vs: number[]) : AbifData{
   return {
     dataOffset: 0,
+    rawData: new Uint8Array(),
     name: name,
     tagNumber: tagNum,
     elementType: 4,
@@ -116,6 +123,7 @@ export function dataShort(name: string, tagNum: number, vs: number[]) : AbifData
 export function dataLong(name: string, tagNum: number, vs: number[]) : AbifData{
   return {
     dataOffset: 0,
+    rawData: new Uint8Array(),
     name: name,
     tagNumber: tagNum,
     elementType: 5,
@@ -135,6 +143,7 @@ export function dataPString(name: string, tagNum: number, s: string) : AbifData{
 
   return {
     dataOffset: 0,
+    rawData: new Uint8Array(),
     name: name,
     tagNumber: tagNum,
     elementType: 18,
@@ -149,8 +158,14 @@ export function dataPString(name: string, tagNum: number, s: string) : AbifData{
 // ###############################################################################################################################
 // ABIF write
 // ###############################################################################################################################
+export async function writeAbif(abifPath: string, ds: AbifData[]) : Promise<void> {
+  const f = await fsp.open(abifPath, 'w')
+  const raw = await buildAbif(ds);
+  f.write(raw);
+  f.close();
+}
 
-/* Write the ABIF file
+/* Build the ABIF file
    The structure will be
      - Header
          . "ABIF" magic number
@@ -159,22 +174,23 @@ export function dataPString(name: string, tagNum: number, s: string) : AbifData{
      - Data values []
      - Directory []   (point back to data values)
 */
-export async function writeAbif(abifPath: string, ds: AbifData[]) : Promise<void> {
-  const f = await fsp.open(abifPath, 'w')
-
+export async function buildAbif(ds: AbifData[]) : Promise<Uint8Array> {
   // ------------------------------------------------------------------------------
   // - Header
   // ------------------------------------------------------------------------------
-  await f.write("ABIF")
-  await f.write(io.mkUint16(101)) // Version 1.1
+  const rawHeaderMagic = io.asciiToUin8Array("ABIF");
+  const rawHeaderVersion = (io.mkUint16(101)) // Version 1.1
 
   // Dir entry that points to the start of the actual directory
   // Written with 0 as the offset, this will get patched later
   const dirPointer = dataHeaderDir(ds.length);
-  await writeDirEntry(f, dirPointer);
   //47 2 byte ints of empty space
-  await f.write(new Uint8Array(47 * 2))
+  const rawHeaderReserved = new Uint8Array(47 * 2);
   // ------------------------------------------------------------------------------
+
+
+  const rawDataValues = []
+  const rawDirectory = []
 
 
   // ------------------------------------------------------------------------------
@@ -196,7 +212,7 @@ export async function writeAbif(abifPath: string, ds: AbifData[]) : Promise<void
     // Only write data if its greater than 4 bytes in size, for 4 or less the data will be written in the entry
     if( dataSize > 4 )
     {
-      await f.write(raw);
+      rawDataValues.push(raw);
       d.dataOffset = dataOffset;
       dataOffset += dataSize;
     } else {
@@ -215,32 +231,34 @@ export async function writeAbif(abifPath: string, ds: AbifData[]) : Promise<void
   const dirStartOffset = dataOffset;
   for(const d_ in ds){
     const d = ds[d_];
-    await writeDirEntry( f, d )
+    const dr = buildDirEntry( d )
+    rawDirectory.push(dr)
   }
   // ------------------------------------------------------------------------------
 
   //fixup offset of directory
-  await f.sync()
   //offset 26 = offset in header where directory_entry.dataOffset is
-  await f.write(io.mkInt32(dirStartOffset), null, null, 26)
-  await f.close()
+  dirPointer.dataOffset = dirStartOffset;
+  const headerRootDir = buildDirEntry(dirPointer);
+  const rawHeaderRootDir = headerRootDir;
+  const combinedRawDataValues = concatArrays(rawDataValues)
+  const combinedRawDirectory = concatArrays(rawDirectory)
+
+  //Build the data array
+  return concatArrays([rawHeaderMagic, rawHeaderVersion, rawHeaderRootDir, rawHeaderReserved, combinedRawDataValues, combinedRawDirectory])
 }
 
 
-export async function writeDirEntry(f: fsp.FileHandle, d: AbifData ) : Promise<void> {
-  await f.write(io.mkStrOfLen(d.name, 4))
-  await f.write(io.mkInt32(d.tagNumber))
-  await f.write(io.mkInt16(d.elementType))
-  await f.write(io.mkInt16(d.elementSize))
-  await f.write(io.mkInt32(d.elementCount))
-  await f.write(io.mkInt32(d.elementSize * d.elementCount))
+export function buildDirEntry(d: AbifData ) : Uint8Array {
+  const name = io.asciiToUin8Array( io.mkStrOfLen(d.name, 4) )
+  const tag = io.mkInt32(d.tagNumber)
+  const elemType = io.mkInt16(d.elementType)
+  const elemSize = io.mkInt16(d.elementSize)
+  const count = io.mkInt32(d.elementCount)
+  const dataSize = io.mkInt32(d.elementSize * d.elementCount)
+  const offset = d.dataOffset instanceof Uint8Array ? d.dataOffset : io.mkInt32(d.dataOffset)
+  const reserved = io.mkInt32(0) //reserved datahandle
 
-  if( d.dataOffset instanceof Uint8Array ){
-    await f.write(d.dataOffset)
-  } else {
-    await f.write(io.mkInt32(d.dataOffset))
-  }
-
-  await f.write(io.mkInt32(0)) //reserved datahandle
+  return concatArrays([name, tag, elemType, elemSize, count, dataSize, offset, reserved])
 }
 // ###############################################################################################################################
