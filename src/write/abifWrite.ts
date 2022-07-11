@@ -1,6 +1,3 @@
-import { promises as fsp } from 'fs';
-//import { join } from 'path';
-
 import * as io from './io'
 
 
@@ -158,13 +155,6 @@ export function dataPString(name: string, tagNum: number, s: string) : AbifData{
 // ###############################################################################################################################
 // ABIF write
 // ###############################################################################################################################
-export async function writeAbif(abifPath: string, ds: AbifData[]) : Promise<void> {
-  const f = await fsp.open(abifPath, 'w')
-  const raw = await buildAbif(ds);
-  f.write(raw);
-  f.close();
-}
-
 /* Build the ABIF file
    The structure will be
      - Header
@@ -174,7 +164,7 @@ export async function writeAbif(abifPath: string, ds: AbifData[]) : Promise<void
      - Data values []
      - Directory []   (point back to data values)
 */
-export async function buildAbif(ds: AbifData[]) : Promise<Uint8Array> {
+export function buildAbif(ds: AbifData[]) : Uint8Array {
   // ------------------------------------------------------------------------------
   // - Header
   // ------------------------------------------------------------------------------

@@ -1,5 +1,3 @@
-import { log } from "console";
-
 export type WFasta = {
   name: string,
   reads: WRead[],

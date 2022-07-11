@@ -1,6 +1,6 @@
 import ya from 'yargs/yargs';
 
-import * as ag from './write/abifGen'
+import * as agf from './write/abifGen_fs'
 
 async function main(){
   const argv = ya(process.argv.slice(2))
@@ -17,7 +17,7 @@ async function main(){
   const args = await argv;
 
   switch(args["_"][0]){
-    case "gen": return ag.runGen( args.source as string, args.dest as string );
+    case "gen": return agf.runGen( args.source as string, args.dest as string );
     default: throw `Uknown command ${args["_"][0]}`
   }
 }

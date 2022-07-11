@@ -3,3 +3,4 @@ node_modules
 *.abi
 a.txt
 *.js
+*.map
