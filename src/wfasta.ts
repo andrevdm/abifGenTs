@@ -103,6 +103,6 @@ export function complementRead(r: string): string{
       case "T": return "A";
       default: return s;
     }
-  }).join("");
+  }).reverse().join("");
 }
 

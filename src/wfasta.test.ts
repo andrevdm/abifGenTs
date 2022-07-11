@@ -130,7 +130,7 @@ test('wfasta: multiple, duplicate names', () => {
 });
 
 test('wfasta: multiple, duplicate names, reverse', () => {
-  const r = wf.parseWFasta("nn", "\n>{0.5}bla\nAAAA\nGG\n>R{0.6} new\nTT\nC\n>{0.2}bla\nAA");
+  const r = wf.parseWFasta("nn", "\n>{0.5}bla\nAAAA\nGG\n>R{0.6} new\nAT\nG\n>{0.2}bla\nAA");
   expect(r).toMatchObject({name: "nn", reads: [
     { name: "bla",
       weight: 0.5,
@@ -138,11 +138,16 @@ test('wfasta: multiple, duplicate names, reverse', () => {
     },
     { name: "new",
       weight: 0.6,
-      read: "AAG"
+      read: "CAT"
     },
     { name: "bla",
       weight: 0.2,
       read: "AA"
     },
   ]});
+});
+
+test('reverse strand', () => {
+  const r = wf.complementRead("TGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAAACCGGTT");
+  expect(r).toEqual("AACCGGTTTGATCATACTGTCTTACTTTGATAAAACCTCCAATTCCCCCTATCATTTTTGGTTTCCATCTTCCTGGCAAACTCATTTCTTCTAATACTGTATCATCTGCTCCTGTATCTAATAGAGCTTCCTTTAGTTGCCCCCCTATCTTTATTGTGACGAGGGGTCGTTGCCA");
 });
