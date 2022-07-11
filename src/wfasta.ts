@@ -3,33 +3,39 @@ export type WFasta = {
   reads: WRead[],
 }
 
-export type WRead = {
+export interface WRead {
   name: string,
   weight: number,
   read: string,
 }
 
+interface WRead_ extends WRead {
+  reverse: boolean;
+}
+
 type Stage = 'header' | 'read';
-type State = [Stage, number, WRead, WRead[]]
+type State = [Stage, number, WRead_, WRead_[]]
 
 export function parseWFasta(name: string, raw: string): WFasta{
   const lines = raw.split(/\n|\r/);
 
-  const doHeader = (line: string, ix: number, current: WRead): void => {
-    const m = line.match(/>\s*(\{(\d+(\.\d+)?)\})?\s*(.+)/);
+  const doHeader = (line: string, ix: number, current: WRead_): void => {
+    const m = line.match(/>\s*(R?)\s*(\{(\d+(\.\d+)?)\})?\s*(.+)/);
     if( !m ){
       throw `Expecting header starting with a '>' on line ${ix} got: ${line}`;
     }
 
-    const mWeight = parseFloat(m[2] || "1");
-    const mName = m[4] || "";
+    const reverse = m[1] ? true : false;
+    const mWeight = parseFloat(m[3] || "1");
+    const mName = m[5] || "";
 
     if( Number.isNaN(mWeight) ){
-      throw `Invalid weight. Expecting a float, got '${m[2]}'`;
+      throw `Invalid weight. Expecting a float, got '${m[3]}'`;
     }
 
     current.name = mName.trim();
     current.weight = mWeight;
+    current.reverse = reverse;
   };
 
   const r = lines.reduce( ([stage, ix, current, hist]: State, line_: string) => {
@@ -68,6 +74,13 @@ export function parseWFasta(name: string, raw: string): WFasta{
     r[3].push(r[2]);
   }
 
+  //reverse if required
+  r[3].forEach(r => {
+    if(r.reverse){
+      r.read = complementRead(r.read);
+    }
+  });
+
   const res = {
     name: name,
     reads: r[3]
@@ -77,6 +90,19 @@ export function parseWFasta(name: string, raw: string): WFasta{
 }
 
 
-function emptyRead() : WRead{
-  return {name: "", weight: 0, read: ""};
+function emptyRead() : WRead_{
+  return {name: "", weight: 0, read: "", reverse: false};
 }
+
+export function complementRead(r: string): string{
+  return [...r].map(s => {
+    switch(s){
+      case "A": return "T";
+      case "C": return "G";
+      case "G": return "C";
+      case "T": return "A";
+      default: return s;
+    }
+  }).join("");
+}
+
