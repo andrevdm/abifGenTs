@@ -18,7 +18,7 @@ async function main(){
 
   switch(args["_"][0]){
     case "gen": return agf.runGen( args.source as string, args.dest as string );
-    default: throw `Uknown command ${args["_"][0]}`
+    default: throw `Unknown command ${args["_"][0]}`
   }
 }
 

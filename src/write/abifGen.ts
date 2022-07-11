@@ -1,4 +1,5 @@
 import * as aw from './abifWrite'
+import * as fa from '../wfasta'
 
 export function generateAbif(name: string, weightedFasta: [number, string][]): Uint8Array{
   const td = generateTraceData(weightedFasta)
@@ -189,3 +190,25 @@ export function iupac(s: string): string{
   }
 }
 
+export function runGenData(data: string): [string, Uint8Array][]{
+  // Parsed files
+  const ws = [fa.parseWFasta("demo", data)];
+
+  // All reads
+  const allReads1 = ws.map(w => w.reads).flat()
+  const allReads = allReads1.reduce((a, r) => {
+    // Group by name
+    a.set(r.name, [...a.get(r.name) || [], r] );
+    return a;
+  },
+  new Map<string, fa.WRead[]>);
+
+  const res: [string, Uint8Array][] = [];
+  allReads.forEach( (rs, name) => {
+    const reads: [number, string][] = rs.map(r => [r.weight, r.read])
+    const d = generateAbif(name, reads);
+    res.push([name, d])
+  })
+
+  return res;
+}
